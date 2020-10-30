@@ -1,0 +1,13 @@
+[workspace]
+members = [
+    "nursery-prelude",
+    
+    "nety/nety",
+    "nety/cli",
+
+    "noty/noty",
+    "noty/cli",
+    
+    "watchy/watchy",
+    "watchy/cli"
+]

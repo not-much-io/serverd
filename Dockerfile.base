@@ -1,0 +1,20 @@
+FROM rust:1
+
+# To check status of tools by nightly versions see: https://rust-lang.github.io/rustup-components-history/index.html
+ENV TOOLCHAIN_VERSION=nightly-2020-10-25
+
+# Project deps
+RUN apt-get update \
+    && apt-get -y install pkg-config libssl-dev make \
+    # Faster linker
+    lld \
+    # Tools used by idea-nursery
+    net-tools dnsutils
+
+# Use a much faster linker... if it works
+ENV RUSTFLAGS "-C link-arg=-fuse-ld=lld"
+
+# Install nightly toolchain and components
+RUN rustup toolchain install ${TOOLCHAIN_VERSION} \
+    && rustup default ${TOOLCHAIN_VERSION} \
+    && rustup component add rustfmt clippy

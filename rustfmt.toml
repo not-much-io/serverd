@@ -1,0 +1,5 @@
+edition="2018"
+unstable_features=true
+# Won't work until rustfmt 2.0 is released - https://github.com/rust-lang/rustfmt/releases
+# chain_width=30
+struct_field_align_threshold=40
