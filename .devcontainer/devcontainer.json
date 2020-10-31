@@ -1,0 +1,25 @@
+{
+	"name": "serverd",
+	"dockerFile": "../Dockerfile.vscode",
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+	"appPort": [],
+	"remoteUser": "vscode",
+	"extensions": [
+		"matklad.rust-analyzer",
+		"bungcip.better-toml",
+		"mikestead.dotenv",
+		"ms-azuretools.vscode-docker",
+		"eamodio.gitlens",
+		"lfs.vscode-emacs-friendly",
+		"mutantdino.resourcemonitor",
+		"xyz.local-history",
+		"redhat.vscode-yaml",
+		"wayou.vscode-todo-highlight",
+		"serayuzgur.crates",
+	],
+	"containerEnv": {},
+	"runArgs": [],
+	// "workspaceMount": "source=/home/nmio/Projects/serverd,target=/workspaces/serverd,type=bind,consistency=cached"
+}

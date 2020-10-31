@@ -1,0 +1,15 @@
+name: ci
+
+on: push
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: ci
+        run: |
+          make dinit
+          make dbuild-image variant=ci
+          make dcreate-container variant=ci
+          make dstart-container variant=ci
