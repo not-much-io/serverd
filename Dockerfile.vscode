@@ -1,4 +1,4 @@
-FROM idea-nursery-base-image
+FROM serverd-base-image
 
 # Editor setup
 ARG USERNAME=vscode

@@ -20,20 +20,20 @@ ci: ## Run CI rust quality check process
 	make lint && make format-check && make test
 
 dbuild-image: ## Build the defined docker image. Usage: make dbuild-image variant=Base|VSCode|CI
-	@docker build --file Dockerfile.$(variant) --tag idea-nursery-$(variant)-image .
+	xs@docker build --file Dockerfile.$(variant) --tag serverd-$(variant)-image .
 
 dcreate-container: ## Create the defined docker container. Usage: make dcreate-container variant=Base|VSCode|CI
 	@docker create \
-		--name idea-nursery-$(variant)-container \
-		idea-nursery-$(variant)-image
+		--name serverd-$(variant)-container \
+		serverd-$(variant)-image
 
 dstart-container: ## Start the defined docker container. Usage: make dstart-container variant=Base|VSCode|CI
-	@docker start idea-nursery-$(variant)-container -a
+	@docker start serverd-$(variant)-container -a
 
 dclean: ## Remove everything associated with the defined dockerfile. Usage: make dclean variant=Base|VSCode|CI
-	@docker stop idea-nursery-$(variant)-container
-	@docker rm idea-nursery-$(variant)-container
-	@docker rmi -f idea-nursery-$(variant)-image
+	@docker stop serverd-$(variant)-container
+	@docker rm serverd-$(variant)-container
+	@docker rmi -f serverd-$(variant)-image
 
 dinit: ## Initialize project, VSCode setup done by VSCode
 	@make dbuild-image variant=base

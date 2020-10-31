@@ -1,3 +1,3 @@
-# idea-nursery
+# serverd
 
-This is a nursery for ideas that might mature into full blown projects. Helps to get started in a ready to go general purpose rust development environment packages for VSCode and Remote Docker + CI etc.
+serverd is a high level daemon to run on servers to collect system information / monitor the system / trigger notifications on events etc.

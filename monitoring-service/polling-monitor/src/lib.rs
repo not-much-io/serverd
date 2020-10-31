@@ -32,7 +32,7 @@ impl Watcher {
     /// Start the Watcher in a separate thread and return a WatcherHandle to manipulate the watcher thread.
     /// ```
     /// use std::process::Command;
-    /// use watchy::Watcher;
+    /// use polling_monitor::Watcher;
     ///
     /// let handle = Watcher::new(Command::new("ls"), Command::new("ls")).watch();
     /// handle.stop_and_join();

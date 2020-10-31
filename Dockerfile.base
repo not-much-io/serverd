@@ -8,7 +8,7 @@ RUN apt-get update \
     && apt-get -y install pkg-config libssl-dev make \
     # Faster linker
     lld \
-    # Tools used by idea-nursery
+    # Tools used by serverd
     net-tools dnsutils
 
 # Use a much faster linker... if it works

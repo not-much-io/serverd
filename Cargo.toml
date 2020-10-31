@@ -1,13 +1,8 @@
 [workspace]
 members = [
-    "nursery-prelude",
+    "internal-prelude",
     
-    "nety/nety",
-    "nety/cli",
-
-    "noty/noty",
-    "noty/cli",
-    
-    "watchy/watchy",
-    "watchy/cli"
+    "network-service/network-interface-reader",
+    "notification-service/email-notifier",
+    "monitoring-service/polling-monitor",
 ]
