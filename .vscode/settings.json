@@ -14,5 +14,15 @@
     "rust-analyzer.cargo.loadOutDirsFromCheck": true,
     "rust-analyzer.procMacro.enabled": true,
     "rust-analyzer.checkOnSave.command": "clippy",
-    "rust-analyzer.updates.channel": "stable"
+    "rust-analyzer.updates.channel": "stable",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "target": true,
+        ".history": true,
+        "Cargo.lock": true,
+    }
 }

@@ -22,8 +22,8 @@ pub mod library_prelude {
         pub use parking_lot::{Mutex, MutexGuard};
     }
 
-    pub use macros::*;
     pub use async_trait::async_trait;
+    pub use macros::*;
     pub use std_additions::*;
     pub use std_enhancements::*;
     pub use std_replacements::*;
