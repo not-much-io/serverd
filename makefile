@@ -20,7 +20,7 @@ ci: ## Run CI rust quality check process
 	make lint && make format-check && make test
 
 dbuild-image: ## Build the defined docker image. Usage: make dbuild-image variant=Base|VSCode|CI
-	xs@docker build --file Dockerfile.$(variant) --tag serverd-$(variant)-image .
+	@docker build --file Dockerfile.$(variant) --tag serverd-$(variant)-image .
 
 dcreate-container: ## Create the defined docker container. Usage: make dcreate-container variant=Base|VSCode|CI
 	@docker create \
