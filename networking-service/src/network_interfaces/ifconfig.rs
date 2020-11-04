@@ -3,7 +3,7 @@ use std::process::{Command, Output};
 
 use internal_prelude::library_prelude::*;
 
-use crate::net_interfaces::{
+use crate::network_interfaces::{
     GetNetInterfaces, GetNetInterfacesError, GetNetInterfacesResult, NetInterface,
 };
 
@@ -24,7 +24,7 @@ impl Default for IfConfig {
 
 #[async_trait]
 impl GetNetInterfaces for IfConfig {
-    async fn get_net_interfaces(&self) -> GetNetInterfacesResult {
+    async fn get_network_interfaces(&self) -> GetNetInterfacesResult {
         self.parse_output(self.call().await?).await
     }
 }
@@ -202,7 +202,7 @@ veth60de6b9: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
             "ifconfig not installed in environment"
         );
 
-        let interfaces = ifconfig.get_net_interfaces().await.unwrap();
+        let interfaces = ifconfig.get_network_interfaces().await.unwrap();
 
         assert!(
             !interfaces.is_empty(),

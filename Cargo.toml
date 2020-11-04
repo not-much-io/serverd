@@ -2,7 +2,9 @@
 members = [
     "internal-prelude",
     
-    "network-service/network-interface-reader",
-    "notification-service/email-notifier",
-    "monitoring-service/polling-monitor",
+    "networking-service",
+    "monitoring-service",
+    "notification-service",
+
+    "serverd",
 ]

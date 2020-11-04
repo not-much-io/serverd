@@ -1,6 +1,6 @@
 use nix::{ifaddrs, sys::socket::SockAddr};
 
-use crate::net_interfaces::{helpers, GetNetInterfaces, GetNetInterfacesResult, NetInterface};
+use crate::network_interfaces::{helpers, GetNetInterfaces, GetNetInterfacesResult, NetInterface};
 
 use internal_prelude::library_prelude::*;
 
@@ -21,7 +21,7 @@ impl Default for GetIfAddrs {
 
 #[async_trait]
 impl GetNetInterfaces for GetIfAddrs {
-    async fn get_net_interfaces(&self) -> GetNetInterfacesResult {
+    async fn get_network_interfaces(&self) -> GetNetInterfacesResult {
         let mut net_interfaces = vec![];
 
         for iaddr in ifaddrs::getifaddrs()? {
@@ -58,7 +58,10 @@ mod tests {
     async fn test_actual_call() {
         let mut names = HashSet::new();
 
-        let nis = GetIfAddrs::default().get_net_interfaces().await.unwrap();
+        let nis = GetIfAddrs::default()
+            .get_network_interfaces()
+            .await
+            .unwrap();
         assert!(!nis.is_empty(), "GetIfAddrs returned no network interfaces");
         for ni in nis {
             assert_ne!(ni.name, "", "network interface has no name");

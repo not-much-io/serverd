@@ -1,7 +1,7 @@
 use std::net::IpAddr;
 use std::process::{Command, Output};
 
-use crate::net_interfaces::{helpers, GetNetInterfaces, GetNetInterfacesResult, NetInterface};
+use crate::network_interfaces::{helpers, GetNetInterfaces, GetNetInterfacesResult, NetInterface};
 
 use internal_prelude::library_prelude::*;
 
@@ -22,7 +22,7 @@ impl Default for Ip {
 
 #[async_trait]
 impl GetNetInterfaces for Ip {
-    async fn get_net_interfaces(&self) -> GetNetInterfacesResult {
+    async fn get_network_interfaces(&self) -> GetNetInterfacesResult {
         self.parse_output(self.call().await?).await
     }
 }
@@ -204,7 +204,7 @@ mod tests {
 
         assert!(ip.is_installed(), "ip not installed in environment");
 
-        let interfaces = ip.get_net_interfaces().await.unwrap();
+        let interfaces = ip.get_network_interfaces().await.unwrap();
 
         assert!(
             !interfaces.is_empty(),

@@ -9,7 +9,7 @@ use internal_prelude::library_prelude::*;
 
 #[async_trait]
 pub trait GetNetInterfaces: Sync {
-    async fn get_net_interfaces(&self) -> GetNetInterfacesResult;
+    async fn get_network_interfaces(&self) -> GetNetInterfacesResult;
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]

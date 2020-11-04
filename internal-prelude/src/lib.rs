@@ -1,32 +1,15 @@
 pub mod library_prelude {
-    mod macros {
-        pub use async_trait::async_trait;
-        pub use lazy_static::lazy_static;
-        pub use thiserror::Error;
-    }
-
-    mod std_additions {
-        pub use futures;
-        pub use log;
-        pub use regex;
-        pub use thiserror;
-        pub use tokio;
-    }
-
-    mod std_enhancements {
-        pub use itertools::Itertools;
-    }
-
-    mod std_replacements {
-        pub use anyhow::Result;
-        pub use parking_lot::{Mutex, MutexGuard};
-    }
-
+    pub use anyhow::Result;
     pub use async_trait::async_trait;
-    pub use macros::*;
-    pub use std_additions::*;
-    pub use std_enhancements::*;
-    pub use std_replacements::*;
+    pub use futures;
+    pub use itertools::Itertools;
+    pub use lazy_static::lazy_static;
+    pub use log;
+    pub use parking_lot::{Mutex, MutexGuard};
+    pub use regex;
+    pub use thiserror;
+    pub use thiserror::Error;
+    pub use tokio;
 
     pub use crate::cli_programs::*;
 }
@@ -34,22 +17,10 @@ pub mod library_prelude {
 pub mod application_prelude {
     pub use crate::library_prelude::*;
 
-    mod macros {
-        pub use anyhow::anyhow;
-    }
-
-    mod std_additions {
-        pub use clap;
-        pub use env_logger;
-    }
-
-    mod utils {
-        pub use anyhow::Error;
-    }
-
-    pub use macros::*;
-    pub use std_additions::*;
-    pub use utils::*;
+    pub use anyhow::anyhow;
+    pub use anyhow::Error;
+    pub use clap;
+    pub use env_logger;
 }
 
 mod cli_programs {

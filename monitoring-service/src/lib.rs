@@ -1,44 +1,51 @@
-use std::process::Command;
-use std::sync::Arc;
-use std::thread::{sleep, spawn, JoinHandle, Result as ThreadResult};
-use std::time::Duration;
+use std::{
+    process::Command,
+    sync::Arc,
+    thread::{sleep, spawn, JoinHandle, Result as ThreadResult},
+    time::Duration,
+};
 
 use internal_prelude::library_prelude::*;
 
-/// Watcher will repeatedly run a command and monitor the output of it for changes.
+/// PollingMonitor will repeatedly run a command and monitor the output of it for changes.
 /// If the output changes a separate command will be triggered.
-pub struct Watcher {
+pub struct PollingMonitor {
     cmd_to_monitor: Command,
     cmd_to_trigger: Command,
-    interval:       Duration,
+    interval:       Duration, // How often to run cmd_to_monitor
+    delay:          Duration, // Delay before running cmd_to_trigger
 }
 
-impl Watcher {
-    /// Create a new watcher, will default to an interval of 1 second.
-    pub fn new(cmd_to_monitor: Command, cmd_to_trigger: Command) -> Watcher {
-        Watcher {
+impl PollingMonitor {
+    pub fn new(cmd_to_monitor: Command, cmd_to_trigger: Command) -> PollingMonitor {
+        PollingMonitor {
             cmd_to_monitor,
             cmd_to_trigger,
             interval: Duration::new(1, 0),
+            delay: Duration::new(0, 0),
         }
     }
 
-    /// Builder pattern for setting the interval of running the command to monitor.
-    pub fn interval(&mut self, interval: Duration) -> &mut Watcher {
+    pub fn interval(&mut self, interval: Duration) -> &mut PollingMonitor {
         self.interval = interval;
         self
     }
 
-    /// Start the Watcher in a separate thread and return a WatcherHandle to manipulate the watcher thread.
+    pub fn delay(&mut self, delay: Duration) -> &mut PollingMonitor {
+        self.delay = delay;
+        self
+    }
+
+    /// Start the PollingMonitor in a separate thread and return a PollingMonitorHandle to manipulate its thread.
     /// ```
     /// use std::process::Command;
-    /// use polling_monitor::Watcher;
+    /// use monitoring_service::PollingMonitor;
     ///
-    /// let handle = Watcher::new(Command::new("ls"), Command::new("ls")).watch();
+    /// let handle = PollingMonitor::new(Command::new("ls"), Command::new("ls")).watch();
     /// handle.stop_and_join();
     /// ```
-    pub fn watch(mut self) -> WatcherHandle {
-        let handle = Arc::new(Mutex::new(WatcherHandleInner::default()));
+    pub fn watch(mut self) -> PollingMonitorHandle {
+        let handle = Arc::new(Mutex::new(PollingMonitorHandleInner::default()));
         let handle_clone = Arc::clone(&handle);
 
         let join_handle = spawn(move || {
@@ -49,9 +56,14 @@ impl Watcher {
                     break;
                 }
 
-                let out = self.cmd_to_monitor.output().unwrap();
+                let out = self
+                    .cmd_to_monitor
+                    .output()
+                    .expect("Failed to execute command to monitor");
                 if out.stdout != previous_output {
-                    self.cmd_to_trigger.spawn().unwrap();
+                    self.cmd_to_trigger
+                        .spawn()
+                        .expect("Failed to execute command to trigger");
                 }
                 previous_output = out.stdout;
 
@@ -60,19 +72,18 @@ impl Watcher {
             }
         });
 
-        WatcherHandle::new(handle_clone, join_handle)
+        PollingMonitorHandle::new(handle_clone, join_handle)
     }
 }
 
-/// WatcherHandle enables controlling the watchers thread.
-pub struct WatcherHandle {
-    inner:       Arc<Mutex<WatcherHandleInner>>,
+pub struct PollingMonitorHandle {
+    inner:       Arc<Mutex<PollingMonitorHandleInner>>,
     join_handle: JoinHandle<()>,
 }
 
-impl WatcherHandle {
-    fn new(inner: Arc<Mutex<WatcherHandleInner>>, join_handle: JoinHandle<()>) -> Self {
-        WatcherHandle { inner, join_handle }
+impl PollingMonitorHandle {
+    fn new(inner: Arc<Mutex<PollingMonitorHandleInner>>, join_handle: JoinHandle<()>) -> Self {
+        PollingMonitorHandle { inner, join_handle }
     }
 
     /// Returns if the Watcher thread is semantically running.
@@ -102,13 +113,13 @@ impl WatcherHandle {
 }
 
 /// Inner representation of WatcherHandle
-struct WatcherHandleInner {
+struct PollingMonitorHandleInner {
     is_running: bool,
 }
 
-impl Default for WatcherHandleInner {
+impl Default for PollingMonitorHandleInner {
     fn default() -> Self {
-        WatcherHandleInner { is_running: true }
+        PollingMonitorHandleInner { is_running: true }
     }
 }
 
@@ -129,13 +140,13 @@ mod tests {
 
         let interval = Duration::from_millis(25);
 
-        let mut watcher = Watcher::new(sec_since_epoch, echo_done);
-        watcher.interval(interval);
+        let mut monitor = PollingMonitor::new(sec_since_epoch, echo_done);
+        monitor.interval(interval);
 
-        let watcher_handle = watcher.watch();
+        let monitor_handle = monitor.watch();
 
         sleep(Duration::from_millis(50));
-        watcher_handle
+        monitor_handle
             .stop_and_join()
             .expect("Join on watcher thread failed");
 

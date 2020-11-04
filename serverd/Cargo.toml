@@ -1,0 +1,18 @@
+[package]
+name = "serverd"
+version = "0.1.0"
+authors = ["nmio <kristo.koert@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+internal-prelude = {path = "../internal-prelude"}
+monitoring-service = {path = "../monitoring-service"}
+networking-service = {path = "../networking-service"}
+notification-service = {path = "../notification-service"}
+clap = "~3.0.0-beta.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[bin]]
+path = "src/main.rs"
+name = "serverd"
