@@ -1,7 +1,7 @@
 FROM rust:1
 
 # To check status of tools by nightly versions see: https://rust-lang.github.io/rustup-components-history/index.html
-ENV TOOLCHAIN_VERSION=nightly-2020-10-25
+ENV TOOLCHAIN_VERSION=nightly-2021-01-31
 
 # Project deps
 RUN apt-get update \

@@ -1,5 +1,6 @@
 use std::{
-    process::Command,
+    collections::HashMap,
+    hash::Hash,
     sync::Arc,
     thread::{sleep, spawn, JoinHandle, Result as ThreadResult},
     time::Duration,
@@ -7,72 +8,137 @@ use std::{
 
 use internal_prelude::library_prelude::*;
 
-/// PollingMonitor will repeatedly run a command and monitor the output of it for changes.
-/// If the output changes a separate command will be triggered.
-pub struct PollingMonitor {
-    cmd_to_monitor: Command,
-    cmd_to_trigger: Command,
-    interval:       Duration, // How often to run cmd_to_monitor
-    delay:          Duration, // Delay before running cmd_to_trigger
+// A significant event that should be reacted to with an action (or multiple)
+#[rustfmt::skip]
+pub trait Event: Eq
+    + Hash
+    + Send
+    + 'static // TODO
+    {}
+
+#[derive(PartialEq, Eq, Hash, Copy, Clone)]
+pub struct PollingSchedule {
+    // This interval starts ticking down after finishing the current poll
+    //
+    // This is important as with very low intervals and varying duration actions
+    // this could cause out of order actions to be fired
+    interval: Duration,
+    // TODO: Add absolute time
 }
 
-impl PollingMonitor {
-    pub fn new(cmd_to_monitor: Command, cmd_to_trigger: Command) -> PollingMonitor {
-        PollingMonitor {
-            cmd_to_monitor,
-            cmd_to_trigger,
+impl Default for PollingSchedule {
+    fn default() -> Self {
+        PollingSchedule {
             interval: Duration::new(1, 0),
-            delay: Duration::new(0, 0),
         }
     }
+}
 
-    pub fn interval(&mut self, interval: Duration) -> &mut PollingMonitor {
+impl PollingSchedule {
+    pub fn interval(&mut self, interval: Duration) -> &mut Self {
         self.interval = interval;
         self
     }
+}
 
-    pub fn delay(&mut self, delay: Duration) -> &mut PollingMonitor {
-        self.delay = delay;
+#[rustfmt::skip]
+pub trait PollingFuncInternal<E: Event>: Fn() -> Result<E>
+    + Send
+    + 'static // TODO
+    {}
+
+pub struct PollingFunc<E: Event>(Box<dyn PollingFuncInternal<E>>);
+
+impl<E: Event> PollingFunc<E> {
+    // fn new(f: impl PollingFuncInternal<E>) -> Self {
+    //     PollingFunc(Box::new(f))
+    // }
+}
+
+#[rustfmt::skip]
+pub trait ActionFuncInternal: Fn() -> Result<()>
+    + Send
+    {}
+
+pub struct ActionFunc(Box<dyn ActionFuncInternal>);
+
+pub struct PollingMonitor<E: Event> {
+    polling_schedule: HashMap<PollingSchedule, PollingFunc<E>>,
+    event_to_actions: HashMap<E, Vec<ActionFunc>>,
+}
+
+impl<E: Event> Default for PollingMonitor<E> {
+    fn default() -> Self {
+        PollingMonitor {
+            polling_schedule: HashMap::new(),
+            event_to_actions: HashMap::new(),
+        }
+    }
+}
+
+impl<E: Event> PollingMonitor<E> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn schedule_polling(
+        &mut self,
+        schedule: PollingSchedule,
+        polling_func: PollingFunc<E>,
+    ) -> &mut Self {
+        self.polling_schedule.insert(schedule, polling_func);
+        self
+    }
+
+    pub fn register_action(&mut self, event: E, action: ActionFunc) -> &mut Self {
+        if let Some(actions) = self.event_to_actions.get_mut(&event) {
+            actions.push(action);
+        } else {
+            self.event_to_actions.insert(event, vec![action]);
+        }
         self
     }
 
     /// Start the PollingMonitor in a separate thread and return a PollingMonitorHandle to manipulate its thread.
-    /// ```
-    /// use std::process::Command;
-    /// use monitoring_service::PollingMonitor;
-    ///
-    /// let handle = PollingMonitor::new(Command::new("ls"), Command::new("ls")).watch();
-    /// handle.stop_and_join();
-    /// ```
-    pub fn watch(mut self) -> PollingMonitorHandle {
-        let handle = Arc::new(Mutex::new(PollingMonitorHandleInner::default()));
-        let handle_clone = Arc::clone(&handle);
+    pub fn start(self) -> PollingMonitorHandle {
+        // This is shared state between all the polling processes and the PollingMonitorHandle
+        let polling_monitor_handle = Arc::new(Mutex::new(PollingMonitorHandleInner::default()));
 
-        let join_handle = spawn(move || {
-            let mut previous_output = Vec::new();
-            loop {
-                let handle = handle.lock();
-                if !handle.is_running {
-                    break;
+        // NOTE: Is the mutext needed despite it being used as readonly?
+        let event_to_actions = Arc::new(Mutex::new(self.event_to_actions));
+
+        let mut polling_processes = Vec::new();
+        for (schedule, polling_func) in self.polling_schedule.into_iter() {
+            // Clone for this polling process
+            let schedules_event_to_actions_clone = Arc::clone(&event_to_actions);
+            let schedules_polling_monitor_handle_clone = Arc::clone(&polling_monitor_handle);
+
+            let polling_process = move || -> Result<i32> {
+                loop {
+                    if let Ok(event) = polling_func.0() {
+                        if let Some(actions) = schedules_event_to_actions_clone.lock().get(&event) {
+                            for action in actions {
+                                (*action.0)()?;
+                            }
+                        }
+                    }
+
+                    if !(schedules_polling_monitor_handle_clone).lock().is_running {
+                        return Ok(0);
+                    }
+
+                    sleep(schedule.interval);
                 }
+            };
 
-                let out = self
-                    .cmd_to_monitor
-                    .output()
-                    .expect("Failed to execute command to monitor");
-                if out.stdout != previous_output {
-                    self.cmd_to_trigger
-                        .spawn()
-                        .expect("Failed to execute command to trigger");
-                }
-                previous_output = out.stdout;
+            polling_processes.push(polling_process);
+        }
 
-                sleep(self.interval);
-                MutexGuard::unlock_fair(handle);
-            }
-        });
+        for process in polling_processes {
+            tokio::spawn(async move { process() });
+        }
 
-        PollingMonitorHandle::new(handle_clone, join_handle)
+        PollingMonitorHandle::new(polling_monitor_handle, spawn(|| {}))
     }
 }
 
@@ -126,11 +192,31 @@ impl Default for PollingMonitorHandleInner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::thread::sleep;
+    // use std::{process::Command, thread::sleep};
+
+    type MyEvent = &'static str;
+
+    impl Event for MyEvent {}
+
+    type MyPollingFunc = dyn Fn() -> Result<MyEvent> + Send;
+
+    impl PollingFuncInternal<MyEvent> for MyPollingFunc {}
+
+    // struct BasePollingFunc(dyn Fn() -> Result<String>);
+    // impl PollingFuncInternal<String> for BasePollingFunc {}
+
+    // fn poll1() -> Result<MyEvent> {
+    //     Ok("")
+    // }
 
     #[tokio::test]
     async fn test_actual_watcher() {
-        let trigger_created_file_name = "trigger_created_file";
+        // PollingMonitor::new().schedule_polling(
+        //     *PollingSchedule::default().interval(Duration::new(1, 0)),
+        //     PollingFunc::new(poll1),
+        // );
+
+        /*         let trigger_created_file_name = "trigger_created_file";
 
         let mut sec_since_epoch = Command::new("date");
         sec_since_epoch.arg("+%s");
@@ -143,7 +229,7 @@ mod tests {
         let mut monitor = PollingMonitor::new(sec_since_epoch, echo_done);
         monitor.interval(interval);
 
-        let monitor_handle = monitor.watch();
+        let monitor_handle = monitor.start();
 
         sleep(Duration::from_millis(50));
         monitor_handle
@@ -161,6 +247,6 @@ mod tests {
         assert_eq!(
             status_code, 0,
             "Watcher trigger command didn't run or didn't create a file successfully"
-        );
+        ); */
     }
 }

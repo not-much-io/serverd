@@ -5,29 +5,12 @@ use std::{fs::File, path::Path};
 const CONFIG_PATH_FALLBACK: &str = "/etc/serverd.conf";
 
 #[derive(Deserialize, Debug)]
-pub struct ServerdConfig {
-    pub monitoring_service_config: Option<MonitoringServiceConfig>,
-}
+pub struct ServerdConfig {}
 
 impl Default for ServerdConfig {
     fn default() -> Self {
-        ServerdConfig {
-            monitoring_service_config: None,
-        }
+        ServerdConfig {}
     }
-}
-
-#[derive(Deserialize, Debug)]
-pub struct MonitoringServiceConfig {
-    pub monitors: Vec<Monitor>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Monitor {
-    pub cmd_to_monitor: String,
-    pub cmd_to_trigger: String,
-    pub interval:       i32,
-    pub delay:          i32,
 }
 
 pub fn read_config(config_path: Option<&Path>) -> Result<ServerdConfig> {

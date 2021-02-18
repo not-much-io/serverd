@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 internal-prelude = {path = "../internal-prelude"}
+crossbeam = "0.8.0"
